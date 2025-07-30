@@ -1,7 +1,6 @@
 # Crane3DSim V1.0: 3D Overhead Crane Simulator
 
-![Screenshot of the simulator in action](assets/crane_simulation_screenshot.png)
-*(Replace this line with an attractive image of your simulator running. Create an `assets/` folder in your repository and save your images there for organization).*
+![Screenshot of the simulator in action](assets/movgrua.gif)
 
 ## Project Description
 
@@ -28,9 +27,6 @@ This repository hosts `Crane3DSim V1.0`, a MATLAB-based three-dimensional overhe
 2.  **Open in MATLAB:** Open MATLAB and navigate to the root folder of the repository.
 3.  **Generate Parameters (Optional, if `Example_identification.mat` does not exist):**
     Run the `ParametersMATgenerator.m` script to create the identification parameters file. The launchers by default will load `Example_identification.mat`.
-    ```matlab
-    ParametersMATgenerator;
-    ```
 4.  **Launch Example Simulations:**
     * **Continuous Simulation:** Open and run `Launcher_cont.m`. You can modify simulation parameters and PWM input signals directly within this file.
     * **Discrete Simulation:** Open and run `Launcher_disc.m`. Similar to the continuous version, you can configure parameters and PWM input matrices here. To implement your own discrete controller, you will need to modify the designated section within `Crane3DSim_disc.m`.
