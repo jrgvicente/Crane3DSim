@@ -80,7 +80,11 @@ The simulator is designed to receive friction parameters in units derived from t
 
 For a more detailed guide on setup, usage, and key functionalities of the simulator, please refer to the documentation:
 
-* [Crane3DSim User Manual (PDF)](Crane3DSim_Guide.pdf) 
+* [Crane3DSim User Manual (PDF)](Crane3DSim_Guide.pdf)
+
+## Licence
+
+GNU GPLv3 
 
 
 ---
