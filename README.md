@@ -20,12 +20,13 @@ This repository hosts `Crane3DSim V1.0`, a MATLAB-based three-dimensional overhe
 
 ### Requirements
 
-* MATLAB (R2017a or higher recommended)
+* It has been tested in MATLAB versions 2024b and 2025a.
+The `sgtitle` command in figures was introduced in 2018b, so in earlier versions it is necessary to comment out these lines when generating graphs in `Crane3DSim_cont.m` and `Crane3DSim_disc.m`. It has been tested in version 2017b.
 ### Running a Simulation
 
 1.  **Clone the Repository**
 2.  **Open in MATLAB:** Open MATLAB and navigate to the root folder of the repository.
-3.  **Generate Parameters (Optional, if `Example_identification.mat` does not exist):**
+3.  **Generate Parameters (Optional, you can use `Example_identification.mat`):**
     Run the `ParametersMATgenerator.m` script to create the identification parameters file. The launchers by default will load `Example_identification.mat`.
 4.  **Launch Example Simulations:**
     * **Continuous Simulation:** Open and run `Launcher_cont.m`. You can modify simulation parameters and PWM input signals directly within this file.
@@ -37,7 +38,7 @@ This repository hosts `Crane3DSim V1.0`, a MATLAB-based three-dimensional overhe
 
 * **Inputs:**
     * `frictions`: Structure containing static and dynamic friction coefficients.
-    * `IMOT`, `IMOTx`, `IMOTy`: Motor inertias.
+    * `IMOT`, `IMOTx`, `IMOTy`: Motor equivalent inertias.
     * `ks`: Vector `[X_PWM_TO_F Y_PWM_TO_F Z_PWM_TO_F]` for PWM to force conversion.
     * `uPWM_x`, `uPWM_y`, `uPWM_z`: Function handles `@(t)` for continuous PWM inputs.
     * `masas`: Vector `[mc mw ms]` with payload, trolley, and rail masses.
@@ -55,7 +56,7 @@ This repository hosts `Crane3DSim V1.0`, a MATLAB-based three-dimensional overhe
 
 * **Inputs:**
     * `fricciones`: Identical friction structure as in the continuous version.
-    * `IMOT`, `IMOTx`, `IMOTy`: Motor inertias.
+    * `IMOT`, `IMOTx`, `IMOTy`: Motor equivalent inertias.
     * `ks`: Vector `[X_PWM_TO_F Y_PWM_TO_F Z_PWM_TO_F]`.
     * `uPWM_x_matriz`, `uPWM_y_matriz`, `uPWM_r_matriz`: Matrices defining discrete PWM inputs over time.
     * `masas`: Mass vector.
@@ -79,11 +80,7 @@ The simulator is designed to receive friction parameters in units derived from t
 
 For a more detailed guide on setup, usage, and key functionalities of the simulator, please refer to the documentation:
 
-* [Crane3DSim User Manual (PDF)](Crane3DSim_Guide.pdf) *(Replace with the exact name and path of your PDF)*
+* [Crane3DSim User Manual (PDF)](Crane3DSim_Guide.pdf) 
 
-
-## Contact
-
-For questions or support regarding Crane3DSim, please contact J. Vicente-Martinez at j.vicente@unizar.es.
 
 ---
