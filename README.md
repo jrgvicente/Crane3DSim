@@ -82,6 +82,36 @@ For a more detailed guide on setup, usage, and key functionalities of the simula
 
 * [Crane3DSim User Manual (PDF)](Crane3DSim_Guide.pdf)
 
+## How to cite
+
+The paper explaining the model, the identification process, and the results has been submitted for review in a journal.
+In the meantime, you can use the preprint hosted on Zenodo.
+
+> J. Vicente-Martinez y E. Ramirez-Laboreo, «A hybrid dynamic model and parameter estimation method for accurately simulating overhead cranes with friction». Zenodo, sep. 01, 2025. doi: 10.5281/zenodo.17043988.
+
+```bibtex
+@misc{vicente_martinez_2025_17043988,
+  author       = {Vicente-Martinez, Jorge and
+                  Ramirez-Laboreo, Edgar},
+  title        = {A hybrid dynamic model and parameter estimation
+                   method for accurately simulating overhead cranes
+                   with friction
+                  },
+  month        = sep,
+  year         = 2025,
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.17043988},
+  url          = {https://doi.org/10.5281/zenodo.17043988},
+}
+```
+
+
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17043988.svg)](https://doi.org/10.5281/zenodo.17043988)
+
+
+
+
 ## Licence
 
 GNU GPLv3 
