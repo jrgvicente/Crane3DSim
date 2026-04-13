@@ -1,10 +1,10 @@
-# Crane3DSim V1.0: 3D Overhead Crane Simulator
+# Crane3DSim V2.0: 3D Overhead Crane Simulator
 
 ![Screenshot of the simulator in action](assets/movgrua.gif)
 
 ## Project Description
 
-This repository hosts `Crane3DSim V1.0`, a MATLAB-based three-dimensional overhead crane simulator. Developed for dynamic analysis and control system design, `Crane3DSim` offers two main variants: one for continuous input signals and another for discrete control applications, facilitating research and development in the field of crane systems.
+This repository hosts `Crane3DSim V2.0`, a MATLAB-based three-dimensional overhead crane simulator. Developed for dynamic analysis and control system design, `Crane3DSim` offers two main variants: one for continuous input signals and another for discrete control applications, facilitating research and development in the field of crane systems.
 
 ## Key Features
 
