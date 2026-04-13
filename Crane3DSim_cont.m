@@ -1,12 +1,21 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%       J.VICENTE - j.vicente@unizar.es           LAST UPDATE: 03/07/2025
-%       [V1.0]
+%       J.VICENTE - j.vicente@unizar.es           LAST UPDATE: 13/04/2026
+%       [V2.0]
 %       Universidad de Zaragoza - Instituto de Investigacion en Ingenieria
 %       de Aragon
 %
 %  ----------------------------------------------------------------------------
 %  ----------------------------------------------------------------------------
-% 
+%
+%  ------ WHAT'S NEW? ---------------------------------------------------------
+%
+% V2.0 -- Fixed problems with oscilation friction terms on the X and Y trolley dynamics
+%      -- Fixed a BUG on the rope axis checks after an event
+%      -- Changes on Force graphs
+%
+%
+%  ---------------------------------------------------------------------------
+%
 % Function to simulate the dynamics of the 3D overhead crane with continuous 
 % PWM signal input
 %
@@ -239,7 +248,7 @@ end
 
 
 
-%% VVARIABLES TO STORE RESULTS
+%% VARIABLES TO STORE RESULTS
 
 T_total = [];
 X_total = [];
@@ -260,7 +269,7 @@ while tspan(1) < tf
     funcion_ode = @(t, x) func_modo1(t, x, uF_x, uF_y, uF_r, mw, ms, mc, Tsx_fun_positive, Tsx_fun_negative , Tsy_fun_positive, Tsy_fun_negative, Tsr_fun_positive, Tsr_fun_negative, Tdy_positive,Tdy_negative, Tdx_positive, Tdx_negative, Tdr_positive, Tdr_negative, g, K_AIREA, K_AIREB, qx, qy, qr);
 
     % Solving the differential equation
-    options = odeset('Events', funcion_eventos, 'AbsTol', 1e-13, 'RelTol',1e-13);% 'MaxStep',1e-4);
+    options = odeset('Events', funcion_eventos, 'AbsTol', 1e-13, 'RelTol',1e-13);%, 'MaxStep',1e-5);
    
     
     [T, X_new, TE, YE, IE] = ode45(funcion_ode, tspan, x, options);
@@ -308,9 +317,9 @@ while tspan(1) < tf
                     qx = -1;                                                    % Start at x to (-x)
         
                 elseif (  any(IE == 3) ||  any(IE == 10)  || any(IE == 11))                                                % if it was moving and it went to speed 0
-                    if (((uF_x_apl - sin(x(5))*sin(x(7))*S) > Tsx_fun_positive(x(3))) && (x(3)<xlim_positive))             % dont stand still because I move from -x to +x.
+                    if (((uF_x_apl - sin(x(5))*sin(x(7))*S + ((K_AIREA*x(6)*cos(x(5))*sin(x(7)) + K_AIREB*x(8)*sin(x(5))*cos(x(7)))/x(9))) > Tsx_fun_positive(x(3))) && (x(3)<xlim_positive))             % dont stand still because I move from -x to +x.
                         qx = 1;
-                    elseif (((uF_x_apl - sin(x(5))*sin(x(7))*S) < -Tsx_fun_negative(x(3))) && (x(3)>xlim_negative))        % dont stand still because I move from +x to -x.
+                    elseif (((uF_x_apl - sin(x(5))*sin(x(7))*S + ((K_AIREA*x(6)*cos(x(5))*sin(x(7)) + K_AIREB*x(8)*sin(x(5))*cos(x(7)))/x(9))) < -Tsx_fun_negative(x(3))) && (x(3)>xlim_negative))        % dont stand still because I move from +x to -x.
                         qx = -1;
                     else
                         qx = 0;                                                 % changeover to stop status
@@ -328,9 +337,9 @@ while tspan(1) < tf
                     qy = -1;                                                    % Starts at and to (-y)
         
                 elseif (  any(IE == 6)  ||  any(IE == 12)  || any(IE == 13))                                     % if it was moving and it went to speed 0
-                    if (((uF_y_apl -S*cos(x(5))) > Tsy_fun_positive(x(1))) && (x(1)<ylim_positive))              % dont stand still because  move from -y to +y.
+                    if (((uF_y_apl -S*cos(x(5)) - ((K_AIREA*x(6)*sin(x(5)))/x(9))  ) > Tsy_fun_positive(x(1))) && (x(1)<ylim_positive))              % dont stand still because  move from -y to +y.
                         qy = 1;
-                    elseif (((uF_y_apl -S*cos(x(5))) < -Tsy_fun_negative(x(1))) && (x(1)>ylim_negative))         % dont stand still because  move from +y to -y.
+                    elseif (((uF_y_apl -S*cos(x(5)) - ((K_AIREA*x(6)*sin(x(5)))/x(9))) < -Tsy_fun_negative(x(1))) && (x(1)>ylim_negative))         % dont stand still because  move from +y to -y.
                         qy = -1;
                     else
                         qy = 0;                                                 % changeover to stop status
@@ -341,7 +350,7 @@ while tspan(1) < tf
     
     
     
-                % cuerda
+                % rope
     
                 if (  any(IE == 7) && qr == 0)                                  % the upward force overcomes the dry friction and was stationary
                     qr = 1;                                                     % Starts upward
@@ -355,9 +364,9 @@ while tspan(1) < tf
                      % -- x --
     
                     if qx == 1                  
-                        dx(4) =  (uF_x_apl -(Tdx_positive*x(4) + Tsx_fun_positive(x(3))) - S*sin(x(5))*sin(x(7)))/(ms + mw + IMOTx);                    
+                        dx(4) =  (uF_x_apl -(Tdx_positive*x(4) + Tsx_fun_positive(x(3))) - S*sin(x(5))*sin(x(7)) + ((K_AIREA*x(6)*cos(x(5))*sin(x(7)) + K_AIREB*x(8)*sin(x(5))*cos(x(7)))/x(9)) )/(ms + mw + IMOTx);                    
                     elseif qx == -1             
-                        dx(4) =  (uF_x_apl -(Tdx_negative*x(4) - Tsx_fun_negative(x(3))) - S*sin(x(5))*sin(x(7)))/(ms + mw + IMOTx);                 
+                        dx(4) =  (uF_x_apl -(Tdx_negative*x(4) - Tsx_fun_negative(x(3))) - S*sin(x(5))*sin(x(7)) + ((K_AIREA*x(6)*cos(x(5))*sin(x(7)) + K_AIREB*x(8)*sin(x(5))*cos(x(7)))/x(9)))/(ms + mw + IMOTx);                 
                     else
                         dx(4) = 0;                    
                     end
@@ -366,9 +375,9 @@ while tspan(1) < tf
                     % -- y --
     
                     if qy == 1                  
-                        dx(2) = (uF_y_apl - (Tdy_positive*x(2) + Tsy_fun_positive(x(1))) - S*cos(x(5)))/(mw + IMOTy);                    
-                    elseif qx == -1             
-                        dx(2) = (uF_y_apl - (Tdy_negative*x(2) - Tsy_fun_negative(x(1))) - S*cos(x(5)))/(mw + IMOTy);             
+                        dx(2) = (uF_y_apl - (Tdy_positive*x(2) + Tsy_fun_positive(x(1))) - S*cos(x(5)) - ((K_AIREA*x(6)*sin(x(5)))/x(9)) )/(mw + IMOTy);                    
+                    elseif qy == -1            
+                        dx(2) = (uF_y_apl - (Tdy_negative*x(2) - Tsy_fun_negative(x(1))) - S*cos(x(5)) - ((K_AIREA*x(6)*sin(x(5)))/x(9)) )/(mw + IMOTy);             
                          
                     else
                         dx(2) = 0;
@@ -442,11 +451,11 @@ function dx_dt = func_modo1(t, x, uF_x_aplicar2, uF_y_aplicar2, uF_r_aplicar2, m
     elseif qx == 1                                                          % It moves in the +x direction (positive velocity)
         Tx = Tdx_positive*x(4) + Tsx_fun_positive(x(3));                              % [N] (absolute value, with direction but no sign)
         dx(3) = x(4);                                                       % dxw            
-        dx(4) =  (uF_x_aplicar -Tx - S*sin(x(5))*sin(x(7)))/(ms + mw + IMOTx);           % ddxw        
+        dx(4) =  (uF_x_aplicar -Tx - S*sin(x(5))*sin(x(7)) + ((K_AIREA*x(6)*cos(x(5))*sin(x(7)) + K_AIREB*x(8)*sin(x(5))*cos(x(7)))/x(9))  ) /  (ms + mw + IMOTx);           % ddxw
     elseif qx == -1                                                         % It moves in the -x direction (negative velocity)
         Tx = Tdx_negative*x(4) - Tsx_fun_negative(x(3));                              % [N] (absolute value, with direction but no sign)
         dx(3) = x(4);                                                       % dxw         
-        dx(4) =  (uF_x_aplicar -Tx - S*sin(x(5))*sin(x(7)))/(ms + mw + IMOTx);           % ddxw        
+        dx(4) =  (uF_x_aplicar -Tx - S*sin(x(5))*sin(x(7)) + ((K_AIREA*x(6)*cos(x(5))*sin(x(7)) + K_AIREB*x(8)*sin(x(5))*cos(x(7)))/x(9))  ) /  (ms + mw + IMOTx);           % ddxw
     end
 
 %% Y-AXIS
@@ -457,11 +466,11 @@ function dx_dt = func_modo1(t, x, uF_x_aplicar2, uF_y_aplicar2, uF_r_aplicar2, m
     elseif qy == 1                                                          % It moves in the +y direction (positive velocity)
         Ty = Tdy_positive*x(2) + Tsy_fun_positive(x(1));                              % [N] (absolute value, with direction but no sign)
         dx(1) = x(2);                                                       % dyw
-        dx(2) = (uF_y_aplicar - Ty - S*cos(x(5)))/(mw + IMOTy);                            % ddyw        
+        dx(2) = (uF_y_aplicar - Ty - S*cos(x(5)) - ((K_AIREA*x(6)*sin(x(5)))/x(9))  )/(mw + IMOTy);                            % ddyw 
     elseif qy == -1                                                         % It moves in the -y direction (negative velocity)
         Ty = Tdy_negative*x(2) -Tsy_fun_negative(x(1));                               % [N] (absolute value, with direction but no sign)
         dx(1) = x(2);                                                       % dyw
-        dx(2) = (uF_y_aplicar -Ty - S*cos(x(5)))/(mw + IMOTy);                             % ddyw        
+        dx(2) = (uF_y_aplicar - Ty - S*cos(x(5)) - ((K_AIREA*x(6)*sin(x(5)))/x(9))  )/(mw + IMOTy);                            % ddyw 
     end
 
 %% ROPE MOVEMENT
@@ -481,9 +490,12 @@ function dx_dt = func_modo1(t, x, uF_x_aplicar2, uF_y_aplicar2, uF_r_aplicar2, m
 dx(5) = x(6);
 dx(7) = x(8);
 
+
 dx(6) = (1/x(9)) * (-2*x(10)*x(6) + sin(x(5))*dx(2) - cos(x(5))*sin(x(7))*dx(4) + g*cos(x(5))*cos(x(7)) + cos(x(5))*sin(x(5))*x(9)*x(8)^2  ) - 1/(mc*x(9)^2)*K_AIREA*x(6);     % ddALFA
 
-dx(8) = (1/ (sin(x(5))*x(9))) * (-g*sin(x(7)) -cos(x(7))*dx(4) -2*sin(x(5))*x(10)*x(8) - 2*cos(x(5))*x(9)*x(6)*x(8) )  - 1/(mc*x(9)^2)*K_AIREB*x(8); % ddBETA
+dx(8) = (1/ (sin(x(5))*x(9))) * (-g*sin(x(7)) -cos(x(7))*dx(4) -2*sin(x(5))*x(10)*x(8) - 2*cos(x(5))*x(9)*x(6)*x(8) )  - 1/(mc*x(9)^2*sin(x(5))^2)*K_AIREB*x(8); % ddBETA
+
+
 
 
 dx_dt = transpose(dx);
@@ -525,12 +537,12 @@ function [value, isterminal, direction] = EventsFnc(t, x, uF_x_aplicar2, uF_y_ap
     
     % MOVEMENT TOWARDS +X (uF_x(t) will be positive); when it changes from - to +,
     % it starts moving towards +X (here, only the - to + change is detected)
-    f1x = ((uF_x_aplicar - sin(x(5))*sin(x(7))*S) - Tsx_fun_positive(x(3))) * (x(3)<xlim_positive);
+    f1x = ((uF_x_aplicar - sin(x(5))*sin(x(7))*S + ((K_AIREA*x(6)*cos(x(5))*sin(x(7)) + K_AIREB*x(8)*sin(x(5))*cos(x(7)))/x(9)) ) - Tsx_fun_positive(x(3))) * (x(3)<xlim_positive);
     % disp(f1x)
     
     % MOVEMENT TOWARDS -X (uF_x(t) will be negative); when it changes from + to -,
     % it starts moving towards -X (here, only the + to - change is detected)
-    f2x = ((uF_x_aplicar - sin(x(5))*sin(x(7))*S) + Tsx_fun_negative(x(3))) * (x(3)>xlim_negative);
+    f2x = ((uF_x_aplicar - sin(x(5))*sin(x(7))*S + ((K_AIREA*x(6)*cos(x(5))*sin(x(7)) + K_AIREB*x(8)*sin(x(5))*cos(x(7)))/x(9)) ) + Tsx_fun_negative(x(3))) * (x(3)>xlim_negative);
     
     % DETECT WHEN THE VELOCITY IN X IS 0 (this is detected for both
     % directions, considering the current state)
@@ -555,11 +567,11 @@ function [value, isterminal, direction] = EventsFnc(t, x, uF_x_aplicar2, uF_y_ap
     
     % MOVEMENT TOWARDS +Y (uF_y(t) will be positive); when it changes from - to +,
     % it starts moving towards +Y (here, only the - to + change is detected)
-    f1y = ((uF_y_aplicar -S*cos(x(5))) - Tsy_fun_positive(x(1))) * (x(1)<ylim_positive);
+    f1y = ((uF_y_aplicar -S*cos(x(5)) - ((K_AIREA*x(6)*sin(x(5)))/x(9))) - Tsy_fun_positive(x(1))) * (x(1)<ylim_positive);
     
     % MOVEMENT TOWARDS -Y (uF_y(t) will be negative); when it changes from + to -,
     % it starts moving towards -Y (here, only the + to - change is detected)
-    f2y = ((uF_y_aplicar -S*cos(x(5))) + Tsy_fun_negative(x(1))) * (x(1)>ylim_negative);
+    f2y = ((uF_y_aplicar -S*cos(x(5)) - ((K_AIREA*x(6)*sin(x(5)))/x(9))) + Tsy_fun_negative(x(1))) * (x(1)>ylim_negative);
     
     % DETECT WHEN THE VELOCITY IN Y IS 0 (this is detected for both
     % directions, considering the current state)
@@ -583,17 +595,17 @@ function [value, isterminal, direction] = EventsFnc(t, x, uF_x_aplicar2, uF_y_ap
     %% ROPE AXIS
     
     if qx == 1                  % it moves in +X
-        dx(4) =  (uF_x_aplicar - (Tdx_positive*x(4) + Tsx_fun_positive(x(3))) - S*sin(x(5))*sin(x(7)))/(ms + mw + IMOTx);
+        dx(4) =  (uF_x_aplicar - (Tdx_positive*x(4) + Tsx_fun_positive(x(3))) - S*sin(x(5))*sin(x(7)) + ((K_AIREA*x(6)*cos(x(5))*sin(x(7)) + K_AIREB*x(8)*sin(x(5))*cos(x(7)))/x(9)) )/(ms + mw + IMOTx);
     elseif qx == -1             % it moves in -X
-        dx(4) =  (uF_x_aplicar -(Tdx_negative*x(4) - Tsx_fun_negative(x(3))) - S*sin(x(5))*sin(x(7)))/(ms + mw + IMOTx);
+        dx(4) =  (uF_x_aplicar - (Tdx_negative*x(4) - Tsx_fun_negative(x(3))) - S*sin(x(5))*sin(x(7)) + ((K_AIREA*x(6)*cos(x(5))*sin(x(7)) + K_AIREB*x(8)*sin(x(5))*cos(x(7)))/x(9)) )/(ms + mw + IMOTx);
     else
         dx(4) = 0;
     end
     % -- y --
     if qy == 1                  % it moves in +Y
-        dx(2) = (uF_y_aplicar - (Tdy_positive*x(2) + Tsy_fun_positive(x(1))) - S*cos(x(5)))/(mw + IMOTy);
+        dx(2) = (uF_y_aplicar - (Tdy_positive*x(2) + Tsy_fun_positive(x(1))) - S*cos(x(5)) - ((K_AIREA*x(6)*sin(x(5)))/x(9)) )/(mw + IMOTy);
     elseif qy == -1             % it moves in -Y
-        dx(2) = (uF_y_aplicar - (Tdy_negative*x(2) - Tsy_fun_negative(x(1))) - S*cos(x(5)))/(mw + IMOTy);
+        dx(2) = (uF_y_aplicar - (Tdy_negative*x(2) - Tsy_fun_negative(x(1))) - S*cos(x(5)) - ((K_AIREA*x(6)*sin(x(5)))/x(9)) )/(mw + IMOTy);
     else
         dx(2) = 0;
     end
@@ -692,7 +704,7 @@ UFR_vec = zeros(size(dzc));
 UFY_vec = zeros(size(dzc));
 UFX_vec = zeros(size(dzc));
 
-
+S_vec_pos = zeros(size(dzc));
 
 
 for i = 1:size(T_total,1)
@@ -701,8 +713,8 @@ for i = 1:size(T_total,1)
     qx = registro_q_expandido(i,1);
     qy = registro_q_expandido(i,2);
     qr = registro_q_expandido(i,3);
-     
-           
+
+
     if qr == 0                                                             
         S = - g*mc*(cos(x(7))*sin(x(5)));        
     elseif qr == 1                                                          
@@ -711,19 +723,21 @@ for i = 1:size(T_total,1)
     elseif qr == -1                                                         
         Tr = Tdr_negative*x(10) + Tsr_fun_negative(x(9));                   
         S = uF_r(t) - Tr;
-    end 
+    end
+
+    S_vec_pos(i) = S;
 
 
     %% X-AXIS
-    
+
     if qx == 0                                                              
         ddxw = 0;
     elseif qx == 1                                                          
         Tx = Tdx_positive*x(4) + Tsx_fun_positive(x(3));                             
-        ddxw =  (uF_x(t) -Tx - S*sin(x(5))*sin(x(7)))/(ms + mw + IMOTx);             
+        ddxw =  (uF_x(t) -Tx - S*sin(x(5))*sin(x(7)) + ((K_AIREA*x(6)*cos(x(5))*sin(x(7)) + K_AIREB*x(8)*sin(x(5))*cos(x(7)))/x(9)) )/(ms + mw + IMOTx);             
     elseif qx == -1                                                        
         Tx = Tdx_negative*x(4) - Tsx_fun_negative(x(3));                                  
-        ddxw =  (uF_x(t) -Tx - S*sin(x(5))*sin(x(7)))/(ms + mw + IMOTx);           
+        ddxw =  (uF_x(t) -Tx - S*sin(x(5))*sin(x(7)) + ((K_AIREA*x(6)*cos(x(5))*sin(x(7)) + K_AIREB*x(8)*sin(x(5))*cos(x(7)))/x(9)) )/(ms + mw + IMOTx);           
     end
 
 
@@ -733,10 +747,10 @@ for i = 1:size(T_total,1)
         ddyw = 0;
     elseif qy == 1                                                          
         Ty = Tdy_positive*x(2) + Tsy_fun_positive(x(1));                             
-        ddyw = (uF_y(t) - Ty - S*cos(x(5)))/(mw + IMOTy);                                
+        ddyw = (uF_y(t) - Ty - S*cos(x(5)) - ((K_AIREA*x(6)*sin(x(5)))/x(9)))/(mw + IMOTy);                                
     elseif qy == -1                                                        
         Ty = Tdy_negative*x(2) -Tsy_fun_negative(x(1));                               
-        ddyw = (uF_y(t) -Ty - S*cos(x(5)))/(mw + IMOTy);                             
+        ddyw = (uF_y(t) -Ty - S*cos(x(5)) - ((K_AIREA*x(6)*sin(x(5)))/x(9)))/(mw + IMOTy);                             
     end
 
 
@@ -749,21 +763,22 @@ for i = 1:size(T_total,1)
     elseif qr == -1                                                             
         ddR = (1/(mc+IMOT)) * (S - mc*cos(x(5))*ddyw + mc*x(9)*x(6)^2 + mc*x(9)*x(8)^2 - mc*cos(x(5))^2*x(9)*x(8)^2 - mc*sin(x(5))*sin(x(7))*ddxw + g*mc*cos(x(7))*sin(x(5)) );
     end   
-    
-    
-    
+
+
+
     dda = (1/x(9)) * (-2*x(10)*x(6) + sin(x(5))*ddyw - cos(x(5))*sin(x(7))*ddxw + g*cos(x(5))*cos(x(7)) + cos(x(5))*sin(x(5))*x(9)*x(8)^2  ) - K_AIREA*x(6);     
 
-    ddb = (1/ (sin(x(5))*x(9))) * (-g*sin(x(7)) -cos(x(7))*ddxw -2*sin(x(5))*x(10)*x(8) - 2*cos(x(5))*x(9)*x(6)*x(8) )  - K_AIREB*x(8); 
-    
-     
- 
+    ddb = (1/ (sin(x(5))*x(9))) * (-g*sin(x(7)) -cos(x(7))*dx(4) -2*sin(x(5))*x(10)*x(8) - 2*cos(x(5))*x(9)*x(6)*x(8) )  - 1/(mc*x(9)^2*sin(x(5))^2)*K_AIREB*x(8); % ddBETA
+
+
+
+
     ddyw_vec(i) = ddyw;
     ddxw_vec(i) = ddxw;
     ddR_vec(i) = ddR;
-    
-    
-   
+
+
+
     ddxc(i) = sin(x(5))*sin(x(7))*ddR + ddxw + 2*cos(x(5))*sin(x(7))*x(10)*x(6) + 2*cos(x(7))*sin(x(5))*x(10)*x(8) - sin(x(5))*sin(x(7))*x(9)*x(6)^2 - sin(x(5))*sin(x(7))*x(9)*x(8)^2 + cos(x(5))*sin(x(7))*x(9)*dda + cos(x(7))*sin(x(5))*x(9)*ddb + 2*cos(x(5))*cos(x(7))*x(9)*x(6)*x(8);
     ddyc(i) = cos(x(5))*ddR + ddyw - cos(x(5))*x(9)*x(6)^2 - sin(x(5))*x(9)*dda - 2*sin(x(5))*x(10)*x(6);
     ddzc(i) = 2*sin(x(5))*sin(x(7))*x(10)*x(8) - 2*cos(x(5))*cos(x(7))*x(10)*x(6) - cos(x(7))*sin(x(5))*ddR + cos(x(7))*sin(x(5))*x(9)*x(6)^2 + cos(x(7))*sin(x(5))*x(9)*x(8)^2 - cos(x(5))*cos(x(7))*x(9)*dda + sin(x(5))*sin(x(7))*x(9)*ddb + 2*cos(x(5))*sin(x(7))*x(9)*x(6)*x(8);
@@ -775,21 +790,14 @@ for i = 1:size(T_total,1)
 end
 
 
+% %%%%%%%%%%%%%%%%%%%%%
+% %% ..:: Force graphs: ::..
+% %%%%%%%%%%%%%%%%%%%%%
 
+%% X-AXIS %%
 
+fx_total_trolley = zeros(size(T_total,1),1);
 
-%%%%%%%%%%%%%%%%%%%%%
-%% ..:: Force graphs: ::..
-%%%%%%%%%%%%%%%%%%%%%
-
-Tsy_aplicada_vec = zeros(size(T_total,1),1);
-Tr_aplicada_vec = zeros(size(T_total,1),1);
-
-% First I get the real applied f taking into account friction.
-
-% :: X ::
-
-fx_ext_con_roz_vec = zeros(size(T_total));
 
 for i = 1:length(T_total)
     tiempo_actual = T_total(i);
@@ -797,168 +805,87 @@ for i = 1:length(T_total)
     estado = registro_q_expandido(i,1);
 
     if estado == 0
-        fx_ext_con_roz_vec(i) = 0; 
+        fx_total_trolley(i) = 0; 
 
     elseif estado == 1  
 
         Tx = Tdx_positive*X_total(i,4) + Tsx_fun_positive(X_total(i,3)); 
-        fx_ext_con_roz_vec(i) = uF_x(tiempo_actual) -Tx;
+        
+        fx_total_trolley(i) = uF_x(tiempo_actual) -Tx - S_vec_pos(i)*sin(X_total(i,5))*sin(X_total(i,7)) + (K_AIREA*X_total(i,6)*cos(X_total(i,5))*sin(X_total(i,7)) + K_AIREB*X_total(i,8)*sin(X_total(i,5))*cos(X_total(i,7)))/X_total(i,9);
 
 
     elseif estado == -1  
 
         Tx = Tdx_negative*X_total(i,4) - Tsx_fun_negative(X_total(i,3));
-        fx_ext_con_roz_vec(i) = uF_x(tiempo_actual) -Tx;      
+        fx_total_trolley(i) = uF_x(tiempo_actual) -Tx - S_vec_pos(i)*sin(X_total(i,5))*sin(X_total(i,7)) + (K_AIREA*X_total(i,6)*cos(X_total(i,5))*sin(X_total(i,7)) + K_AIREB*X_total(i,8)*sin(X_total(i,5))*cos(X_total(i,7)))/X_total(i,9);
 
     end
 
 end
 
 
-% :: Y ::
-
-fy_ext_con_roz_vec = zeros(size(T_total));
 
 
-for i = 1:length(T_total)    
+%% Y-AXIS %% 
+
+
+fy_total_trolley = zeros(size(T_total,1),1);
+
+
+for i = 1:length(T_total)
     tiempo_actual = T_total(i);
 
     estado = registro_q_expandido(i,2);
 
     if estado == 0
-        fy_ext_con_roz_vec(i) = 0;
-        Ty = 0;
+        fy_total_trolley(i) = 0; 
 
     elseif estado == 1  
 
         Ty = Tdy_positive*X_total(i,2) + Tsy_fun_positive(X_total(i,1));
-        fy_ext_con_roz_vec(i) = uF_y(tiempo_actual) -Ty;    
+        fy_total_trolley(i) = uF_y(tiempo_actual) -Ty - S_vec_pos(i)*cos(X_total(i,5)) - ((K_AIREA*X_total(i,6)*sin(X_total(i,5)))/X_total(i,9)); 
 
     elseif estado == -1  
 
         Ty = Tdy_negative*X_total(i,2) - Tsy_fun_negative(X_total(i,1));
-        fy_ext_con_roz_vec(i) = uF_y(tiempo_actual) -Ty;      
-
+        fy_total_trolley(i) = uF_y(tiempo_actual) -Ty - S_vec_pos(i)*cos(X_total(i,5)) - ((K_AIREA*X_total(i,6)*sin(X_total(i,5)))/X_total(i,9)); 
     end
-
 
 end
 
 
-% :: rope ::
 
-fuerza_r_externa = arrayfun(uF_r, T_total);
+%% ROPE-AXIS %%
 
-fuerza_r_masa = g.*mc.*(cos(X_total(:,7)).*sin(X_total(:,5)));
-
-F_tot_eje_cuerda_sin_rozamiento = zeros(size(T_total));
-F_tot_eje_cuerda = zeros(size(T_total));
-
-S_vec = zeros(size(T_total));
-
-SumF_ejeL_masa = zeros(size(T_total));  % Sum of forces on the rope axis on the mass (if the sum is 0, the mass does not move on the rope axis, the rope does not change length).
-
-fuerza_r_sin_rozamientos = zeros(size(T_total));
+f_rope_total_trolley = zeros(size(T_total,1),1);
 
 
-for i = 1:length(T_total)
+for i = 1:length(T_total)    
+
     estado = registro_q_expandido(i,3);
-    tiempo_actual = T_total(i);
 
-    if estado == 0
-        S_vec(i) = - g*mc*(cos(X_total(i,7))*sin(X_total(i,5)));   
-
-
-        F_tot_eje_cuerda_sin_rozamiento(i) = (S_vec(i) - mc*cos(X_total(i,5))*ddyw_vec(i) + mc*X_total(i,9)*X_total(i,6)^2 + mc*X_total(i,9)*X_total(i,8)^2 - mc*cos(X_total(i,5))^2*X_total(i,9)*X_total(i,8)^2 - mc*sin(X_total(i,5))*sin(X_total(i,7))*ddxw_vec(i) + g*mc*cos(X_total(i,7))*sin(X_total(i,5)) );
+    if estado == 0      
+        
+        f_rope_total_trolley(i) = 0;       
 
 
-        F_tot_eje_cuerda(i) = 0;
+    else 
 
-        Tr = 0;
+        f_rope_total_trolley(i) = (S_vec_pos(i) - mc*cos(X_total(i,5))*ddyw_vec(i) + mc*X_total(i,9)*X_total(i,6)^2 + mc*X_total(i,9)*X_total(i,8)^2 - mc*cos(X_total(i,5))^2*X_total(i,9)*X_total(i,8)^2 - mc*sin(X_total(i,5))*sin(X_total(i,7))*ddxw_vec(i) + g*mc*cos(X_total(i,7))*sin(X_total(i,5)) );
 
-
-    elseif estado == 1 
-
-        Tr = Tdr_positive*X_total(i,10) - Tsr_fun_positive(X_total(i,9));
-        S_vec(i) = uF_r(tiempo_actual) - Tr;        
-
-        F_tot_eje_cuerda(i) = (S_vec(i) - mc*cos(X_total(i,5))*ddyw_vec(i) + mc*X_total(i,9)*X_total(i,6)^2 + mc*X_total(i,9)*X_total(i,8)^2 - mc*cos(X_total(i,5))^2*X_total(i,9)*X_total(i,8)^2 - mc*sin(X_total(i,5))*sin(X_total(i,7))*ddxw_vec(i) + g*mc*cos(X_total(i,7))*sin(X_total(i,5)) );
-
-        F_tot_eje_cuerda_sin_rozamiento(i) = (uF_r(tiempo_actual) - mc*cos(X_total(i,5))*ddyw_vec(i) + mc*X_total(i,9)*X_total(i,6)^2 + mc*X_total(i,9)*X_total(i,8)^2 - mc*cos(X_total(i,5))^2*X_total(i,9)*X_total(i,8)^2 - mc*sin(X_total(i,5))*sin(X_total(i,7))*ddxw_vec(i) + g*mc*cos(X_total(i,7))*sin(X_total(i,5)) );
-
-      
-    elseif estado == -1 
-
-        Tr = Tdr_negative*X_total(i,10) + Tsr_fun_negative(X_total(i,9));
-        S_vec(i) = uF_r(tiempo_actual) - Tr;
-
-      
-        F_tot_eje_cuerda(i) = (S_vec(i) - mc*cos(X_total(i,5))*ddyw_vec(i) + mc*X_total(i,9)*X_total(i,6)^2 + mc*X_total(i,9)*X_total(i,8)^2 - mc*cos(X_total(i,5))^2*X_total(i,9)*X_total(i,8)^2 - mc*sin(X_total(i,5))*sin(X_total(i,7))*ddxw_vec(i) + g*mc*cos(X_total(i,7))*sin(X_total(i,5)) );
-
-        F_tot_eje_cuerda_sin_rozamiento(i) = (uF_r(tiempo_actual) - mc*cos(X_total(i,5))*ddyw_vec(i) + mc*X_total(i,9)*X_total(i,6)^2 + mc*X_total(i,9)*X_total(i,8)^2 - mc*cos(X_total(i,5))^2*X_total(i,9)*X_total(i,8)^2 - mc*sin(X_total(i,5))*sin(X_total(i,7))*ddxw_vec(i) + g*mc*cos(X_total(i,7))*sin(X_total(i,5)) );
-
-        end
-
-    Tr_aplicada_vec(i) = Tr;
-end
-
-
-% ..:: x ::..
-
-fuerza_x_externa = arrayfun(uF_x, T_total);
-
-fuerza_x_sin_rozamientos = fuerza_x_externa - sin(X_total(:,5)).*sin(X_total(:,7)).*S_vec;
-
-fuerza_x_final = zeros(size(T_total));
-
-
-for i = 1:length(T_total)
-    
-    estado = registro_q_expandido(i,1);
-
-    
-    if estado == 0
-        fuerza_x_final(i) = 0;
-    elseif estado == 1
-        Tx = Tdx_positive*X_total(i,4) + Tsx_fun_positive(X_total(i,3));
-        fuerza_x_final(i) = fuerza_x_sin_rozamientos(i) - Tx;
-    elseif estado == -1
-        Tx = Tdx_negative*X_total(i,4) - Tsx_fun_negative(X_total(i,3));
-        fuerza_x_final(i) = fuerza_x_sin_rozamientos(i) - Tx;
-    end
-end
-
-% ..:: y ::..
-
-fuerza_y_externa = arrayfun(uF_y, T_total);
-
-fuerza_y_sin_rozamientos = fuerza_y_externa - cos(X_total(:,5)).*S_vec;
-
-fuerza_y_final = zeros(size(T_total));
-
-
-for i = 1:length(T_total)
-    
-    estado = registro_q_expandido(i,2);
-
-    
-    if estado == 0
-        fuerza_y_final(i) = 0;
-        Ty = 0;
-    elseif estado == 1
-        Ty = Tdy_positive*X_total(i,2) + Tsy_fun_positive(X_total(i,1));
-        fuerza_y_final(i) = fuerza_y_sin_rozamientos(i) - Ty;
-    elseif estado == -1
-        Ty = Tdy_negative*X_total(i,2) - Tsy_fun_negative(X_total(i,1));
-        fuerza_y_final(i) = fuerza_y_sin_rozamientos(i) - Ty;
     end
 
-    Tsy_aplicada_vec(i) = Ty;
 end
+
 
 
 
 % ::::::: Graph of applied forces  ::::::::::::::::::::::::::::::
+
+fuerza_x_externa = arrayfun(uF_x, T_total);
+fuerza_y_externa = arrayfun(uF_y, T_total);
+fuerza_r_externa = arrayfun(uF_r, T_total);
+
 
 
 % Colors for the different states of the system
@@ -976,7 +903,7 @@ subplot(3, 1, 1);
 
 % Iterate over the records to draw the patches
 for i = 1:size(registro_q, 1)
-    
+
     x_inicio = registro_q(i, 1);
 
     if i < size(registro_q, 1)
@@ -1003,8 +930,7 @@ end
 hold on
 
 plot(T_total, fuerza_x_externa, 'b', 'LineWidth', 1.5, 'DisplayName', 'External F' );
-plot(T_total, fuerza_x_sin_rozamientos, 'r:', 'LineWidth', 1.5, 'DisplayName', 'F without friction' );
-plot(T_total, fuerza_x_final, 'g:', 'LineWidth', 1.5, 'DisplayName', 'F final' );
+plot(T_total, fx_total_trolley, 'g:', 'LineWidth', 1.5, 'DisplayName', 'total Fx on trolley' );
 title('Forces X-axis');
 ylabel('Froce (N)');
 xlabel('Time (s)');
@@ -1021,18 +947,18 @@ subplot(3, 1, 2);
 
 
 for i = 1:size(registro_q, 1)
-    
+
     x_inicio = registro_q(i, 1);
 
-    
+
     if i < size(registro_q, 1)
         x_fin = registro_q(i + 1, 1);
     else
         x_fin = T_total(end);  
     end
-    
+
     estado = registro_q(i, 3);
-    
+
     if estado == 0
         color_fondo = colores(1, :);
     elseif estado == -1
@@ -1049,8 +975,7 @@ end
 hold on
 
 plot(T_total, fuerza_y_externa, 'b', 'LineWidth', 1.5, 'DisplayName', 'External F' );
-plot(T_total, fuerza_y_sin_rozamientos, 'r:', 'LineWidth', 1.5, 'DisplayName', 'F without friction' );
-plot(T_total, fuerza_y_final, 'g:', 'LineWidth', 1.5, 'DisplayName', 'F final' );
+plot(T_total, fy_total_trolley, 'g:', 'LineWidth', 1.5, 'DisplayName', 'total Fy on trolley' );
 title('Forces Y-axis');
 ylabel('Froce (N)');
 xlabel('Time (s)');
@@ -1068,17 +993,17 @@ subplot(3, 1, 3);
 for i = 1:size(registro_q, 1)    
     x_inicio = registro_q(i, 1);
 
-    
+
     if i < size(registro_q, 1)
         x_fin = registro_q(i + 1, 1);
     else
         x_fin = T_total(end);  
     end
 
-    
+
     estado = registro_q(i, 4);
 
-    
+
     if estado == 0
         color_fondo = colores(1, :);
     elseif estado == -1
@@ -1096,8 +1021,7 @@ end
 hold on
 
 plot(T_total, fuerza_r_externa, 'b', 'LineWidth', 1.5, 'DisplayName', 'External force (= uFr)' );
-plot(T_total, F_tot_eje_cuerda_sin_rozamiento, 'r:', 'LineWidth', 1.5, 'DisplayName', 'F without friction' );
-plot(T_total, F_tot_eje_cuerda, 'g:', 'LineWidth', 1.5, 'DisplayName', 'F final rope axis' );
+plot(T_total, f_rope_total_trolley, 'g:', 'LineWidth', 1.5, 'DisplayName', 'total F on rope axis' );
 
 title('Forces on the mass in the rope axis');
 ylabel('Forces (N)');
@@ -1110,13 +1034,15 @@ legend(h_legends);
 grid on;
 
 
-% Título general para toda la figura
+% General title 
 sgtitle('FORCES (Yellow = stopped, Green = +, Red = -)', 'FontSize', 14, 'FontWeight', 'bold');
 
 
 
 
-%%%
+%%
+
+
 
 %%%%%%%%%%%%%%%%%%%%%
 %% ..:: State variable graphs: ::..
@@ -1188,7 +1114,7 @@ end
 
 sgtitle('PAYLOAD POSITIONS', 'FontSize', 14, 'FontWeight', 'bold');
 
-% Vincular los ejes X de todos los gráficos
+% Linkaxes
 linkaxes(findall(gcf, 'Type', 'axes'), 'x');
 
 
@@ -1316,7 +1242,13 @@ linkaxes(findall(gcf, 'Type', 'axes'), 'x');
 
 T_out = T_total;
 
-DATA_OUT = [X_total(:,1) X_total(:,2) ddyw_vec X_total(:,3) X_total(:,4) ddxw_vec X_total(:,5) X_total(:,6) X_total(:,7) X_total(:,8) X_total(:,9) X_total(:,10) ddR_vec y_abs_carga dyc ddyc x_abs_carga dxc ddxc z_rel_carga dzc ddzc];
+% DATA_OUT = [X_total(:,1) X_total(:,2) ddyw_vec X_total(:,3) X_total(:,4) ddxw_vec X_total(:,5) X_total(:,6) X_total(:,7) X_total(:,8) X_total(:,9) X_total(:,10) ddR_vec y_abs_carga dyc ddyc x_abs_carga dxc ddxc z_rel_carga dzc ddzc];
+
+
+
+DATA_OUT = [X_total(:,1) X_total(:,2) 0.*X_total(:,2) X_total(:,3) X_total(:,4) 0.*X_total(:,4) X_total(:,5) X_total(:,6) X_total(:,7) X_total(:,8) X_total(:,9) X_total(:,10) 0.*X_total(:,10) y_abs_carga 0.*y_abs_carga  0.*y_abs_carga x_abs_carga 0.*x_abs_carga  0.*x_abs_carga z_rel_carga 0.*z_rel_carga 0.*z_rel_carga];
+
+
 
 ESTADO_OUT = registro_q_expandido;
 

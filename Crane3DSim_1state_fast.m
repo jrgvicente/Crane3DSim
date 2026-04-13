@@ -1,6 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%       J.VICENTE - j.vicente@unizar.es           LAST UPDATE: 10/07/2025
-%       [V1.0]
+%       J.VICENTE - j.vicente@unizar.es           LAST UPDATE: 13/04/2026
+%       [V2.0]
 %       Universidad de Zaragoza - Instituto de Investigacion en Ingenieria
 %       de Aragon
 %
@@ -10,6 +10,12 @@
 % Secondary Function to detect the first state on Crane3Dsim
 %
 %
+%  ------ WHAT'S NEW? ---------------------------------------------------------
+%
+% V2.0 -- Fixed problems with oscilation friction terms on the X and Y trolley dynamics
+%
+%
+%  ---------------------------------------------------------------------------
 %
 %% Function inputs:
 % Discretization period (somewhat small)
@@ -68,9 +74,9 @@ end
 % x axis
 
 if qx == 0          
-    if (((uF_x_k1 - sin(X_k1(5))*sin(X_k1(7))*S) - Tsx_fun_positivo(X_k1(3))) * (X_k1(3)<xlim_positivo) )> 0
+    if (((uF_x_k1 - sin(X_k1(5))*sin(X_k1(7))*S + ((K_AIREA*X_k1(6)*cos(X_k1(5))*sin(X_k1(7)) + K_AIREB*X_k1(8)*sin(X_k1(5))*cos(X_k1(7)))/X_k1(9))) - Tsx_fun_positivo(X_k1(3))) * (X_k1(3)<xlim_positivo) )> 0
         qx_new = 1;
-    elseif (((uF_x_k1 - sin(X_k1(5))*sin(X_k1(7))*S) + Tsx_fun_negativo(X_k1(3))) * (X_k1(3)>xlim_negativo) ) < 0
+    elseif (((uF_x_k1 - sin(X_k1(5))*sin(X_k1(7))*S + ((K_AIREA*X_k1(6)*cos(X_k1(5))*sin(X_k1(7)) + K_AIREB*X_k1(8)*sin(X_k1(5))*cos(X_k1(7)))/X_k1(9))) + Tsx_fun_negativo(X_k1(3))) * (X_k1(3)>xlim_negativo) ) < 0
         qx_new = -1;
     else
         qx_new = 0;
@@ -88,9 +94,9 @@ end
 % Y-axis
 
 if qy == 0         
-    if (((uF_y_k1 -S*cos(X_k1(5))) - Tsy_fun_positivo(X_k1(1))) * (X_k1(1)<ylim_positivo) )> 0
+    if (((uF_y_k1 -S*cos(X_k1(5)) - ((K_AIREA*X_k1(6)*sin(X_k1(5)))/X_k1(9))) - Tsy_fun_positivo(X_k1(1))) * (X_k1(1)<ylim_positivo) )> 0
         qy_new = 1;
-    elseif ( ((uF_y_k1 -S*cos(X_k1(5))) + Tsy_fun_negativo(X_k1(1))) * (X_k1(1)>ylim_negativo)) < 0
+    elseif ( ((uF_y_k1 -S*cos(X_k1(5)) - ((K_AIREA*X_k1(6)*sin(X_k1(5)))/X_k1(9))) + Tsy_fun_negativo(X_k1(1))) * (X_k1(1)>ylim_negativo)) < 0
         qy_new = -1;
     else
         qy_new = 0;
@@ -111,9 +117,9 @@ end
 
 
 if qx_new == 1                 
-    dx4 =  (uF_x_k1 - (Tdx_positivo*X_k1(4) + Tsx_fun_positivo(X_k1(3))) - S*sin(X_k1(5))*sin(X_k1(7)))/(ms + mw + IMOTx);                    
+    dx4 =  (uF_x_k1 - (Tdx_positivo*X_k1(4) + Tsx_fun_positivo(X_k1(3))) - S*sin(X_k1(5))*sin(X_k1(7)) + ((K_AIREA*X_k1(6)*cos(X_k1(5))*sin(X_k1(7)) + K_AIREB*X_k1(8)*sin(X_k1(5))*cos(X_k1(7)))/X_k1(9)))/(ms + mw + IMOTx);                    
 elseif qx_new == -1             
-    dx4 =  (uF_x_k1 -(Tdx_negativo*X_k1(4) - Tsx_fun_negativo(X_k1(3))) - S*sin(X_k1(5))*sin(X_k1(7)))/(ms + mw + IMOTx);                 
+    dx4 =  (uF_x_k1 - (Tdx_negativo*X_k1(4) - Tsx_fun_negativo(X_k1(3))) - S*sin(X_k1(5))*sin(X_k1(7)) + ((K_AIREA*X_k1(6)*cos(X_k1(5))*sin(X_k1(7)) + K_AIREB*X_k1(8)*sin(X_k1(5))*cos(X_k1(7)))/X_k1(9)))/(ms + mw + IMOTx);                 
 else
     dx4 = 0;                    
 end 
@@ -122,9 +128,9 @@ end
 % -- y --
 
 if qy_new == 1                  
-    dx2 = (uF_y_k1 - (Tdy_positivo*X_k1(2) + Tsy_fun_positivo(X_k1(1))) - S*cos(X_k1(5)))/(mw + IMOTy);                    
+    dx2 = (uF_y_k1 - (Tdy_positivo*X_k1(2) + Tsy_fun_positivo(X_k1(1))) - S*cos(X_k1(5)) - ((K_AIREA*X_k1(6)*sin(X_k1(5)))/X_k1(9)))/(mw + IMOTy);                    
 elseif qy_new == -1            
-    dx2 = (uF_y_k1 - (Tdy_negativo*X_k1(2) - Tsy_fun_negativo(X_k1(1))) - S*cos(X_k1(5)))/(mw + IMOTy);             
+    dx2 = (uF_y_k1 - (Tdy_negativo*X_k1(2) - Tsy_fun_negativo(X_k1(1))) - S*cos(X_k1(5)) - ((K_AIREA*X_k1(6)*sin(X_k1(5)))/X_k1(9)))/(mw + IMOTy);             
      
 else
     dx2 = 0;    
@@ -186,12 +192,12 @@ function dx_dt = func_modo1(t, x, uF_x_aplicar, uF_y_aplicar, uF_r_aplicar, mw, 
         dx(4) = 0;                                                          
     elseif qx == 1                                                          
         Tx = Tdx_positivo*x(4) + Tsx_fun_positivo(x(3));                    
-        dx(3) = x(4);                                                       
-        dx(4) =  (uF_x_aplicar -Tx - S*sin(x(5))*sin(x(7)))/(ms + mw + IMOTx);
+        dx(3) = x(4);                                                      
+        dx(4) =  (uF_x_aplicar -Tx - S*sin(x(5))*sin(x(7)) + ((K_AIREA*x(6)*cos(x(5))*sin(x(7)) + K_AIREB*x(8)*sin(x(5))*cos(x(7)))/x(9))  ) /  (ms + mw + IMOTx);           % ddxw
     elseif qx == -1                                                         
         Tx = Tdx_negativo*x(4) - Tsx_fun_negativo(x(3));                    
         dx(3) = x(4);                                                       
-        dx(4) =  (uF_x_aplicar -Tx - S*sin(x(5))*sin(x(7)))/(ms + mw + IMOTx);          
+        dx(4) =  (uF_x_aplicar -Tx - S*sin(x(5))*sin(x(7)) + ((K_AIREA*x(6)*cos(x(5))*sin(x(7)) + K_AIREB*x(8)*sin(x(5))*cos(x(7)))/x(9))  ) /  (ms + mw + IMOTx);           % ddxw
     end
 
 
@@ -203,12 +209,12 @@ function dx_dt = func_modo1(t, x, uF_x_aplicar, uF_y_aplicar, uF_r_aplicar, mw, 
         dx(2) = 0;                                                          
     elseif qy == 1                                                          
         Ty = Tdy_positivo*x(2) + Tsy_fun_positivo(x(1));                    
-        dx(1) = x(2);                                                       
-        dx(2) = (uF_y_aplicar - Ty - S*cos(x(5)))/(mw + IMOTy);             
+        dx(1) = x(2);                                          
+        dx(2) = (uF_y_aplicar - Ty - S*cos(x(5)) - ((K_AIREA*x(6)*sin(x(5)))/x(9))  )/(mw + IMOTy);                            % ddyw 
     elseif qy == -1                                                         
         Ty = Tdy_negativo*x(2) -Tsy_fun_negativo(x(1));                     
         dx(1) = x(2);                                                       
-        dx(2) = (uF_y_aplicar -Ty - S*cos(x(5)))/(mw + IMOTy);              
+        dx(2) = (uF_y_aplicar - Ty - S*cos(x(5)) - ((K_AIREA*x(6)*sin(x(5)))/x(9))  )/(mw + IMOTy);                            % ddyw 
     end
 
 
@@ -230,9 +236,10 @@ function dx_dt = func_modo1(t, x, uF_x_aplicar, uF_y_aplicar, uF_r_aplicar, mw, 
 dx(5) = x(6);
 dx(7) = x(8);
 
-dx(6) = (1/x(9)) * (-2*x(10)*x(6) + sin(x(5))*dx(2) - cos(x(5))*sin(x(7))*dx(4) + g*cos(x(5))*cos(x(7)) + cos(x(5))*sin(x(5))*x(9)*x(8)^2  ) - 1/(mc*x(9)^2)*K_AIREA*x(6);    
+dx(6) = (1/x(9)) * (-2*x(10)*x(6) + sin(x(5))*dx(2) - cos(x(5))*sin(x(7))*dx(4) + g*cos(x(5))*cos(x(7)) + cos(x(5))*sin(x(5))*x(9)*x(8)^2  ) - 1/(mc*x(9)^2)*K_AIREA*x(6);  %ddALPHA  
 
-dx(8) = (1/ (sin(x(5))*x(9))) * (-g*sin(x(7)) -cos(x(7))*dx(4) -2*sin(x(5))*x(10)*x(8) - 2*cos(x(5))*x(9)*x(6)*x(8) )  - 1/(mc*x(9)^2)*K_AIREB*x(8);
+dx(8) = (1/ (sin(x(5))*x(9))) * (-g*sin(x(7)) -cos(x(7))*dx(4) -2*sin(x(5))*x(10)*x(8) - 2*cos(x(5))*x(9)*x(6)*x(8) )  - 1/(mc*x(9)^2*sin(x(5))^2)*K_AIREB*x(8); % ddBETA
+
 
 
 dx_dt = transpose(dx);
