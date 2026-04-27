@@ -109,8 +109,9 @@ In the meantime, you can use the preprint hosted on Zenodo.
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17043988.svg)](https://doi.org/10.5281/zenodo.17043988)
 
+## Acknowledgments
 
-
+This work is part of the project PID2024-159279OB-I00, funded by MICIU/AEI/10.13039/501100011033 and by ERDF/EU. It was founded also in part by the MICIU through the grant FPU24/01878, in part by the Government of Aragón - EU, via grant T45_23R and in part by Fundación Ibercaja and the University of Zaragoza, via grant JIUZ2023-IA-07.
 
 ## Licence
 
